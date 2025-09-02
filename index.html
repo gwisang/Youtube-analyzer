@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Youtube Analyzer</title>
+  </head>
+  <body>
+    <div id="app">
+      <h1>Youtube Video Analyzer</h1>
+
+      <section id="analysis-section">
+        <input type="text" id="youtube-url" placeholder="분석할 유튜브 URL을 입력하세요." />
+        <button id="analyze-btn">분석하기</button>
+      </section>
+
+      <section id="trending-section" class="card">
+        <h2>인기 분석 TOP 5</h2>
+        <div class="tabs">
+          <button id="trending-video-tab" class="tab-btn active">동영상별</button>
+          <button id="trending-category-tab" class="tab-btn">카테고리별</button>
+        </div>
+        <div id="trending-video-content" class="tab-content active">
+          <ol id="trending-video-list"></ol>
+        </div>
+        <div id="trending-category-content" class="tab-content">
+          <ol id="trending-category-list"></ol>
+        </div>
+      </section>
+
+      <section id="result-section" class="card" style="display: none;">
+        <h2>분석 결과</h2>
+        <div id="result-content"></div>
+        <div id="comment-analysis-content" style="margin-top: 2rem;">
+          <h4>댓글 분석 결과</h4>
+          <div id="comment-analysis-result"></div>
+        </div>
+      </section>
+
+      <section id="history-section" class="card">
+        <h2>분석 기록</h2>
+        <ul id="history-list"></ul>
+      </section>
+      
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
