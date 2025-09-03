@@ -5,67 +5,137 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Youtube Analyzer</title>
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div id="app">
-      <h1>Youtube Video Analyzer</h1>
-
-      <section id="analysis-section">
-        <textarea id="youtube-urls" placeholder="분석할 유튜브 URL을 한 줄에 하나씩 입력하세요." rows="5"></textarea>
-        <button id="analyze-btn">분석하기</button>
-      </section>
-
-      <section id="trending-section" class="card">
-        <h2>인기 분석 TOP 5</h2>
-        <div class="tabs">
-          <button id="trending-video-tab" class="tab-btn active">동영상별</button>
-          <button id="trending-category-tab" class="tab-btn">카테고리별</button>
-        </div>
-        <div id="trending-video-content" class="tab-content active">
-          <ol id="trending-video-list"></ol>
-        </div>
-        <div id="trending-category-content" class="tab-content">
-          <ol id="trending-category-list"></ol>
-        </div>
-      </section>
-
-      <section id="result-section" class="card" style="display: none;">
-        <h2>분석 결과</h2>
-        <div class="table-container">
-          <table id="multi-result-table">
-            <thead>
-              <tr>
-                <th>영상 제목</th>
-                <th>카테고리</th>
-                <th>좋아요</th>
-                <th>주요 감정</th>
-                <th>상세 보기</th> <!-- New column for details -->
-              </tr>
-            </thead>
-            <tbody>
-              <!-- 분석 결과가 여기에 추가됩니다. -->
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Detailed Analysis Modal/Section -->
-        <div id="detail-modal-overlay" class="modal-overlay">
-          <div id="detail-modal-content" class="modal-content card">
-            <button class="modal-close-btn">&times;</button>
-            <h3>상세 분석 결과</h3>
-            <div id="detail-video-info"></div>
-            <div id="detail-comment-summary" style="margin-bottom: 1.5rem; padding: 1rem; background-color: rgba(0,0,0,0.1); border-radius: 8px;"></div>
-            <div id="detail-comment-analysis-result"></div>
-          </div>
-        </div>
-      </section>
-
-      <section id="history-section" class="card">
-        <h2>분석 기록</h2>
-        <ul id="history-list"></ul>
-      </section>
+      <div class="site-header">YOUTUBE ANALYZER</div>
       
+      <div class="container">
+        <!-- Left Panel - Popular Analysis Rankings -->
+        <div class="left-panel">
+          <section id="trending-section" class="card">
+            <h2>인기 분석 순위</h2>
+            <div class="tabs">
+              <button id="trending-video-tab" class="tab-btn active">동영상별</button>
+              <button id="trending-category-tab" class="tab-btn">카테고리별</button>
+            </div>
+            <div id="trending-video-content" class="tab-content active">
+              <ol id="trending-video-list"></ol>
+            </div>
+            <div id="trending-category-content" class="tab-content">
+              <ol id="trending-category-list"></ol>
+            </div>
+          </section>
+        </div>
+
+        <!-- Center Panel - Search and Results -->
+        <div class="center-panel">
+          <section id="analysis-section" class="search-section">
+            <h1 class="search-title">YouTube 분석</h1>
+            <div id="analysis-section" class="search-form">
+              <textarea id="youtube-urls" placeholder="분석할 유튜브 URL을 한 줄에 하나씩 입력하세요." rows="4"></textarea>
+              <button id="analyze-btn">분석하기</button>
+            </div>
+          </section>
+
+          <section id="result-section" class="result-section card" style="display: none;">
+            <h2>분석 결과</h2>
+            <div class="table-container">
+              <table id="multi-result-table">
+                <thead>
+                  <tr>
+                    <th>영상 제목</th>
+                    <th>카테고리</th>
+                    <th>좋아요</th>
+                    <th>주요 감정</th>
+                    <th>상세 보기</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- 분석 결과가 여기에 추가됩니다. -->
+                </tbody>
+              </table>
+            </div>
+            <div id="detail-modal-overlay" class="modal-overlay">
+              <div id="detail-modal-content" class="modal-content card">
+                <button class="modal-close-btn">&times;</button>
+                <h3>상세 분석 결과</h3>
+                <div id="detail-video-info"></div>
+                <div id="detail-comment-summary" style="margin-bottom: 1.5rem; padding: 1rem; background-color: rgba(0,0,0,0.1); border-radius: 8px;"></div>
+                <div id="detail-comment-analysis-result"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Right Panel - Analysis History -->
+        <div class="right-panel">
+          <section id="history-section" class="card">
+            <h2>분석 기록</h2>
+            <ul id="history-list"></ul>
+          </section>
+        </div>
+      </div>
     </div>
+    
     <script type="module" src="/src/main.js"></script>
+    <script>
+      // Tab functionality
+      document.getElementById('trending-video-tab').addEventListener('click', function() {
+        document.getElementById('trending-video-tab').classList.add('active');
+        document.getElementById('trending-category-tab').classList.remove('active');
+        document.getElementById('trending-video-content').classList.add('active');
+        document.getElementById('trending-category-content').classList.remove('active');
+      });
+
+      document.getElementById('trending-category-tab').addEventListener('click', function() {
+        document.getElementById('trending-category-tab').classList.add('active');
+        document.getElementById('trending-video-tab').classList.remove('active');
+        document.getElementById('trending-category-content').classList.add('active');
+        document.getElementById('trending-video-content').classList.remove('active');
+      });
+
+      // 분석 결과가 나오면 분석 기록을 result-section 아래로 이동
+      function moveHistorySection(showResult) {
+        const centerPanel = document.querySelector('.center-panel');
+        const historySection = document.getElementById('history-section');
+        const resultSection = document.getElementById('result-section');
+        
+        if (showResult) {
+          // 결과 섹션을 보여주고 히스토리를 우측 패널에 유지
+          resultSection.style.display = 'block';
+        } else {
+          resultSection.style.display = 'none';
+        }
+      }
+      
+      document.getElementById('analyze-btn').addEventListener('click', function() {
+        moveHistorySection(true);
+      });
+      
+      window.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('result-section').style.display === 'none') {
+          moveHistorySection(false);
+        }
+      });
+
+      // Modal functionality
+      document.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('detail-btn')) {
+          document.getElementById('detail-modal-overlay').classList.add('active');
+        }
+      });
+
+      document.querySelector('.modal-close-btn').addEventListener('click', function() {
+        document.getElementById('detail-modal-overlay').classList.remove('active');
+      });
+
+      document.getElementById('detail-modal-overlay').addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.classList.remove('active');
+        }
+      });
+    </script>
   </body>
 </html>
