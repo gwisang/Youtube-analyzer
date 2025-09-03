@@ -1,6 +1,6 @@
 import './style.css';
 import { supabase } from './js/lib/supabaseClient';
-import { analyzeEmotions, extractTopics } from './js/commentAnalyzer.js';
+import { analyzeTopics, analyzeSentiment } from './js/textProcessor.js';
 import { categorizeVideo } from './js/videoHelper.js';
 
 // ⚠️ 중요: 이 API 키는 데모용이며, 실제 프로덕션에서는 절대 소스 코드에 포함하면 안 됩니다.
@@ -190,44 +190,41 @@ const analyzeSingleVideo = async (url) => {
   }
 
   const category = categorizeVideo(videoData.title);
-  const dataToSave = { ...videoData, url, category };
-  await saveVideoData(dataToSave);
-
   const comments = await fetchYouTubeComments(videoId);
-  let dominantEmotion = '-';
-  let emotionAnalysis = {};
-  let topTopics = [];
-  let commentSummaryText = '';
+  const commentTexts = comments.map(item => item.snippet.topLevelComment.snippet.textDisplay || '');
 
-  if (comments.length > 0) {
-    emotionAnalysis = analyzeEmotions(comments);
-    topTopics = extractTopics(comments);
+  let topics = [];
+  let sentiment = { positive: 0, negative: 0, neutral: 1 };
+  let dominantEmotion = '중립';
 
-    const emotionMap = { joy: '기쁨', sadness: '슬픔', anger: '분노', surprise: '놀람', neutral: '중립' };
-    const dominant = Object.keys(emotionAnalysis).reduce((a, b) => emotionAnalysis[a] > emotionAnalysis[b] ? a : b);
-    dominantEmotion = emotionMap[dominant] || '-';
+  if (commentTexts.length > 0) {
+    topics = analyzeTopics(commentTexts);
+    sentiment = analyzeSentiment(commentTexts);
 
-    if (topTopics.length > 0) {
-      const summaryTopics = topTopics.slice(0, 3).map(topic => `<strong>${topic[0]}</strong>`).join(', ');
-      commentSummaryText = `이 영상은 주로 ${summaryTopics}에 대해 이야기하고 있으며, 시청자들은 <strong>${emotionMap[dominant]}</strong> 감정을 가장 많이 표현했습니다.`;
-    } else {
-      commentSummaryText = `댓글에서 뚜렷한 주제를 찾기 어렵지만, 시청자들은 <strong>${emotionMap[dominant]}</strong> 감정을 가장 많이 표현했습니다.`;
-    }
-  } else {
-    commentSummaryText = '<p>분석할 댓글이 없거나 댓글을 불러올 수 없습니다.</p>';
+    const sentimentMap = { positive: '긍정', negative: '부정', neutral: '중립' };
+    const dominant = Object.keys(sentiment).reduce((a, b) => sentiment[a] > sentiment[b] ? a : b);
+    dominantEmotion = sentimentMap[dominant] || '중립';
   }
+
+  const dataToSave = { 
+    ...videoData, 
+    url, 
+    category, 
+    topics: { list: topics },
+    sentiment: sentiment
+  };
+  await saveVideoData(dataToSave);
 
   return {
     title: videoData.title,
     category,
     likes: videoData.likes.toLocaleString(),
     dominantEmotion,
-    fullData: { // 상세 보기를 위한 전체 데이터
-      videoInfo: videoData,
-      commentsCount: comments.length,
-      emotionAnalysis,
-      topTopics,
-      commentSummaryText,
+    fullData: { 
+      videoInfo: { ...videoData, url, category },
+      commentsCount: commentTexts.length,
+      topics,
+      sentiment,
     }
   };
 };

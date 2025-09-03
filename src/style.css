@@ -391,6 +391,57 @@ button:hover {
   background-color: #b91c1c;
 }
 
+/* Comment Analysis Section */
+#comment-analysis-container {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #404040;
+}
+
+#comment-analysis-container h4 {
+  font-size: 1.3rem;
+  color: #dc2626;
+  margin-bottom: 1.5rem;
+}
+
+#comment-topics-section, #comment-sentiment-section {
+  margin-bottom: 1.5rem;
+}
+
+#comment-topics-section strong, #comment-sentiment-section strong {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+  color: #ffffff;
+}
+
+#comment-topics-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+#comment-topics-list li {
+  background-color: #3a3a3a;
+  color: #f0f0f0;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+#sentiment-chart {
+  width: 100%;
+  height: 200px; /* Placeholder height */
+  background-color: #3a3a3a;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
   .container {
