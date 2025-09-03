@@ -70,6 +70,7 @@ export function analyzeSentiment(comments) {
   let negativeCount = 0;
   let strongPositiveCount = 0;
   let strongNegativeCount = 0;
+  let neutralCount = 0;
   let totalComments = comments.length;
 
   comments.forEach(comment => {
