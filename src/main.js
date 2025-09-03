@@ -193,12 +193,13 @@ const analyzeSingleVideo = async (url) => {
   const comments = await fetchYouTubeComments(videoId);
   const commentTexts = comments.map(item => item.snippet.topLevelComment.snippet.textDisplay || '');
 
-  let topics = [];
+  let topics = { nouns: [], verbs: [], adjectives: [] };
   let sentiment = { positive: 0, negative: 0, neutral: 1 };
   let dominantEmotion = '중립';
 
   if (commentTexts.length > 0) {
-    topics = analyzeTopics(commentTexts);
+    // analyzeTopics가 명사/동사/형용사별 TOP 10을 반환하도록 수정 필요
+    topics = analyzeTopics(commentTexts); // {nouns: [...], verbs: [...], adjectives: [...]}
     sentiment = analyzeSentiment(commentTexts);
 
     const sentimentMap = { positive: '긍정', negative: '부정', neutral: '중립' };
@@ -210,7 +211,7 @@ const analyzeSingleVideo = async (url) => {
     ...videoData, 
     url, 
     category, 
-    topics: { list: topics },
+    topics,
     sentiment: sentiment
   };
   await saveVideoData(dataToSave);
@@ -371,13 +372,39 @@ const showDetailModal = (data) => {
   // 댓글 요약은 현재 제공되지 않으므로 비워둡니다.
   detailCommentSummary.innerHTML = '';
 
-  let topicsHtml = '<h5>주요 토픽 TOP 10</h5>';
-  if (data.topics && data.topics.length > 0) {
-    topicsHtml += '<ol>';
-    data.topics.forEach(topic => {
-      topicsHtml += `<li>${topic[0]} (${topic[1]}회)</li>`;
-    });
-    topicsHtml += '</ol>';
+  let topicsHtml = '<h5>댓글 토픽 분석 (명사/동사/형용사 TOP 10)</h5>';
+  if (data.topics) {
+    // 명사
+    if (data.topics.nouns && data.topics.nouns.length > 0) {
+      topicsHtml += '<strong>명사 TOP 10</strong><ol>';
+      data.topics.nouns.forEach(([word, count]) => {
+        topicsHtml += `<li>${word} (${count}회)</li>`;
+      });
+      topicsHtml += '</ol>';
+    }
+    // 동사
+    if (data.topics.verbs && data.topics.verbs.length > 0) {
+      topicsHtml += '<strong>동사 TOP 10</strong><ol>';
+      data.topics.verbs.forEach(([word, count]) => {
+        topicsHtml += `<li>${word} (${count}회)</li>`;
+      });
+      topicsHtml += '</ol>';
+    }
+    // 형용사
+    if (data.topics.adjectives && data.topics.adjectives.length > 0) {
+      topicsHtml += '<strong>형용사 TOP 10</strong><ol>';
+      data.topics.adjectives.forEach(([word, count]) => {
+        topicsHtml += `<li>${word} (${count}회)</li>`;
+      });
+      topicsHtml += '</ol>';
+    }
+    if (
+      (!data.topics.nouns || data.topics.nouns.length === 0) &&
+      (!data.topics.verbs || data.topics.verbs.length === 0) &&
+      (!data.topics.adjectives || data.topics.adjectives.length === 0)
+    ) {
+      topicsHtml += '<p>분석된 토픽이 없습니다.</p>';
+    }
   } else {
     topicsHtml += '<p>분석된 토픽이 없습니다.</p>';
   }
@@ -385,12 +412,12 @@ const showDetailModal = (data) => {
   let sentimentHtml = `<h5>댓글 감정 분석 (총 ${data.commentsCount}개)</h5>`;
   if (data.sentiment) {
     sentimentHtml += `
-      <ul>
-        <li>매우 긍정: ${(data.sentiment.strongPositive * 100).toFixed(1)}%</li>
-        <li>긍정: ${(data.sentiment.positive * 100).toFixed(1)}%</li>
-        <li>중립: ${(data.sentiment.neutral * 100).toFixed(1)}%</li>
-        <li>부정: ${(data.sentiment.negative * 100).toFixed(1)}%</li>
-        <li>매우 부정: ${(data.sentiment.strongNegative * 100).toFixed(1)}%</li>
+      <ul style="display:flex; gap:1.5rem; flex-wrap:wrap;">
+        <li>😍 ${(data.sentiment.strongPositive * 100).toFixed(1)}% <span style="color:#dc2626;">매우 긍정</span></li>
+        <li>😊 ${(data.sentiment.positive * 100).toFixed(1)}% <span style="color:#dc2626;">긍정</span></li>
+        <li>😐 ${(data.sentiment.neutral * 100).toFixed(1)}% <span style="color:#dc2626;">중립</span></li>
+        <li>😠 ${(data.sentiment.negative * 100).toFixed(1)}% <span style="color:#dc2626;">부정</span></li>
+        <li>😭 ${(data.sentiment.strongNegative * 100).toFixed(1)}% <span style="color:#dc2626;">매우 부정</span></li>
       </ul>
     `;
   } else {

@@ -15,28 +15,43 @@ const KOREAN_STOPWORDS = new Set([
  */
 export function analyzeTopics(comments) {
   if (!comments || comments.length === 0) {
-    return [];
+    return { nouns: [], verbs: [], adjectives: [] };
   }
 
-  const wordCounts = new Map();
+  // 간단한 형태소 분리: 명사(한글/영어), 동사(한글+다), 형용사(한글+운/은/는/스러운 등)
+  const nounCounts = new Map();
+  const verbCounts = new Map();
+  const adjCounts = new Map();
 
   comments.forEach(comment => {
-    // Regex to extract Korean/English words, ignoring most punctuation/emojis
     const words = comment.toLowerCase().match(/[a-zA-Z가-힣]+/g) || [];
-
     words.forEach(word => {
-      // Filter out stopwords and single-character words
-      if (!KOREAN_STOPWORDS.has(word) && word.length > 1) {
-        wordCounts.set(word, (wordCounts.get(word) || 0) + 1);
+      if (KOREAN_STOPWORDS.has(word) || word.length < 2) return;
+      // 명사: 한글/영어, 2글자 이상, 불용어 제외
+      if (/^[가-힣]{2,}$/.test(word) || /^[a-zA-Z]{2,}$/.test(word)) {
+        nounCounts.set(word, (nounCounts.get(word) || 0) + 1);
+      }
+      // 동사: '다'로 끝나는 한글
+      if (/^[가-힣]{2,}다$/.test(word)) {
+        verbCounts.set(word, (verbCounts.get(word) || 0) + 1);
+      }
+      // 형용사: '운', '은', '는', '스러운' 등으로 끝나는 한글
+      if (/^[가-힣]{2,}(운|은|는|스러운)$/.test(word)) {
+        adjCounts.set(word, (adjCounts.get(word) || 0) + 1);
       }
     });
   });
 
-  // Sort words by frequency
-  const sortedWords = Array.from(wordCounts.entries()).sort((a, b) => b[1] - a[1]);
+  // 빈도순 정렬 후 TOP 10 반환
+  const sortedNouns = Array.from(nounCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const sortedVerbs = Array.from(verbCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const sortedAdjs = Array.from(adjCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10);
 
-  // Return the top 10 keywords
-  return sortedWords.slice(0, 10);
+  return {
+    nouns: sortedNouns,
+    verbs: sortedVerbs,
+    adjectives: sortedAdjs
+  };
 }
 
 // Basic sentiment dictionaries

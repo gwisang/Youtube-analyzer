@@ -166,15 +166,18 @@ body {
 
 #multi-result-table {
   width: 100%;
+  min-width: 900px;
   border-collapse: collapse;
   margin-top: 1rem;
 }
 
 #multi-result-table th, #multi-result-table td {
-  padding: 1rem;
+  padding: 1rem 0.7rem;
   border-bottom: 1px solid #404040;
   text-align: left;
   color: #ffffff;
+  white-space:nowrap;
+  vertical-align:middle;
 }
 
 #multi-result-table th {
@@ -310,11 +313,13 @@ body {
 
 .modal-content {
   position: relative;
-  width: 90%;
-  max-width: 700px;
+  width: 95%;
+  max-width: 1200px;
+  min-width: 700px;
   max-height: 90vh;
+  margin: 0 auto;
   overflow-y: auto;
-  padding: 2rem;
+  padding: 2.5rem 3rem;
   background: #2a2a2a;
   color: #ffffff;
   border: 1px solid #404040;
