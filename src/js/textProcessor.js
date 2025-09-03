@@ -40,46 +40,65 @@ export function analyzeTopics(comments) {
 }
 
 // Basic sentiment dictionaries
-const POSITIVE_WORDS = new Set(['좋아요', '최고', '감사합니다', '멋져요', '대박', '사랑', '응원', '재밌', '유익', '기대']);
-const NEGATIVE_WORDS = new Set(['싫어요', '최악', '별로', '실망', '나쁨', '욕', '짜증', '불만', '그닥', '노잼']);
+const POSITIVE_WORDS = new Set([
+  '좋아요', '최고', '감사합니다', '멋져요', '대박', '사랑', '응원', '재밌', '유익', '기대',
+  '행복', '추천', '감동', '기쁨', '굿', '짱', '힐링', '감사', '웃음', '즐거움', '최고에요',
+  'love', 'great', 'awesome', 'amazing', 'fun', 'happy', 'cool', 'nice', 'perfect', 'wow',
+  '😍', '😊', '👍', '👏', '😁', '😃', '😄', '😆', '😎', '🤩', '💯', '🔥', '💖', '💗', '💙', '💚', '💛', '💜', '🧡'
+]);
+const NEGATIVE_WORDS = new Set([
+  '싫어요', '최악', '별로', '실망', '나쁨', '욕', '짜증', '불만', '그닥', '노잼',
+  '화남', '화가', '짜증남', '불쾌', '우울', '실망스러움', '실망했어요', '별로에요', '별로임', '별로다',
+  'hate', 'bad', 'worst', 'angry', 'sad', 'disappoint', 'boring', 'terrible', 'awful', 'nope',
+  '😠', '😡', '😢', '😭', '😞', '😔', '👎', '💔', '🤬', '😣', '😖', '😫', '😩', '😤'
+]);
+const STRONG_POSITIVE = new Set(['최고', '대박', '감동', '최고에요', 'awesome', 'amazing', 'perfect', '😍', '💯', '🔥']);
+const STRONG_NEGATIVE = new Set(['최악', '실망', 'hate', 'worst', 'terrible', 'awful', '😡', '😭', '🤬', '💔']);
 
 /**
  * Analyzes the sentiment of comments based on a word dictionary.
  * @param {string[]} comments - An array of comment strings.
  * @returns {{positive: number, negative: number, neutral: number}} An object with sentiment ratios.
  */
+
 export function analyzeSentiment(comments) {
   if (!comments || comments.length === 0) {
-    return { positive: 0, negative: 0, neutral: 1 };
+    return { positive: 0, negative: 0, neutral: 1, strongPositive: 0, strongNegative: 0 };
   }
 
   let positiveCount = 0;
   let negativeCount = 0;
-  let totalWords = 0;
+  let strongPositiveCount = 0;
+  let strongNegativeCount = 0;
+  let totalComments = comments.length;
 
   comments.forEach(comment => {
-    const words = comment.toLowerCase().match(/[a-zA-Z가-힣]+/g) || [];
+    let pos = 0, neg = 0, strongPos = 0, strongNeg = 0;
+    const words = comment.toLowerCase().match(/[a-zA-Z가-힣]+|[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}]/gu) || [];
     words.forEach(word => {
-      totalWords++;
-      if (POSITIVE_WORDS.has(word)) {
-        positiveCount++;
-      } else if (NEGATIVE_WORDS.has(word)) {
-        negativeCount++;
-      }
+      if (POSITIVE_WORDS.has(word)) pos++;
+      if (NEGATIVE_WORDS.has(word)) neg++;
+      if (STRONG_POSITIVE.has(word)) strongPos++;
+      if (STRONG_NEGATIVE.has(word)) strongNeg++;
     });
+    if (pos > neg && pos > 0) positiveCount++;
+    else if (neg > pos && neg > 0) negativeCount++;
+    else neutralCount++;
+    if (strongPos > 0) strongPositiveCount++;
+    if (strongNeg > 0) strongNegativeCount++;
   });
 
-  if (totalWords === 0) {
-    return { positive: 0, negative: 0, neutral: 1 };
-  }
-
-  const positive = positiveCount / totalWords;
-  const negative = negativeCount / totalWords;
+  const positive = positiveCount / totalComments;
+  const negative = negativeCount / totalComments;
   const neutral = 1 - positive - negative;
+  const strongPositive = strongPositiveCount / totalComments;
+  const strongNegative = strongNegativeCount / totalComments;
 
   return {
     positive: parseFloat(positive.toFixed(2)),
     negative: parseFloat(negative.toFixed(2)),
-    neutral: parseFloat(Math.max(0, neutral).toFixed(2)) // Ensure neutral is not negative
+    neutral: parseFloat(Math.max(0, neutral).toFixed(2)),
+    strongPositive: parseFloat(strongPositive.toFixed(2)),
+    strongNegative: parseFloat(strongNegative.toFixed(2))
   };
 }

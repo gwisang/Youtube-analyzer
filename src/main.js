@@ -257,15 +257,21 @@ const handleAnalysis = async () => {
     const result = await analyzeSingleVideo(url);
     analysisResults.push(result.fullData); // 상세 보기를 위해 전체 데이터 저장
 
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${result.title}</td>
-      <td>${result.category}</td>
-      <td>${result.likes}</td>
-      <td>${result.dominantEmotion}</td>
-      <td><button class="detail-btn" data-index="${i}">상세 보기</button></td>
-    `;
-    multiResultTableBody.appendChild(row);
+      // 감정에 맞는 이모티콘 추가
+      let emotionIcon = '😐';
+      if (result.dominantEmotion === '긍정') emotionIcon = '😊';
+      else if (result.dominantEmotion === '부정') emotionIcon = '😠';
+      else if (result.dominantEmotion === '중립') emotionIcon = '😐';
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${result.title}</td>
+        <td>${result.category}</td>
+        <td>${result.likes}</td>
+        <td>${emotionIcon} ${result.dominantEmotion}</td>
+        <td><button class="detail-btn" data-index="${i}">상세 보기</button></td>
+      `;
+      multiResultTableBody.appendChild(row);
   }
 
   analyzeBtn.disabled = false;
@@ -380,9 +386,11 @@ const showDetailModal = (data) => {
   if (data.sentiment) {
     sentimentHtml += `
       <ul>
+        <li>매우 긍정: ${(data.sentiment.strongPositive * 100).toFixed(1)}%</li>
         <li>긍정: ${(data.sentiment.positive * 100).toFixed(1)}%</li>
-        <li>부정: ${(data.sentiment.negative * 100).toFixed(1)}%</li>
         <li>중립: ${(data.sentiment.neutral * 100).toFixed(1)}%</li>
+        <li>부정: ${(data.sentiment.negative * 100).toFixed(1)}%</li>
+        <li>매우 부정: ${(data.sentiment.strongNegative * 100).toFixed(1)}%</li>
       </ul>
     `;
   } else {
