@@ -5,7 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Youtube Analyzer</title>
-    <link rel="stylesheet" href="style.css" />
+    
   </head>
   <body>
     <div id="app">
@@ -33,7 +33,7 @@
         <div class="center-panel">
           <section id="analysis-section" class="search-section">
             <h1 class="search-title">YouTube 분석</h1>
-            <div id="analysis-section" class="search-form">
+            <div id="analysis-form" class="search-form">
               <textarea id="youtube-urls" placeholder="분석할 유튜브 URL을 한 줄에 하나씩 입력하세요." rows="4"></textarea>
               <button id="analyze-btn">분석하기</button>
             </div>
@@ -92,62 +92,6 @@
     </div>
     
     <script type="module" src="/src/main.js"></script>
-    <script>
-      // Tab functionality
-      document.getElementById('trending-video-tab').addEventListener('click', function() {
-        document.getElementById('trending-video-tab').classList.add('active');
-        document.getElementById('trending-category-tab').classList.remove('active');
-        document.getElementById('trending-video-content').classList.add('active');
-        document.getElementById('trending-category-content').classList.remove('active');
-      });
-
-      document.getElementById('trending-category-tab').addEventListener('click', function() {
-        document.getElementById('trending-category-tab').classList.add('active');
-        document.getElementById('trending-video-tab').classList.remove('active');
-        document.getElementById('trending-category-content').classList.add('active');
-        document.getElementById('trending-video-content').classList.remove('active');
-      });
-
-      // 분석 결과가 나오면 분석 기록을 result-section 아래로 이동
-      function moveHistorySection(showResult) {
-        const centerPanel = document.querySelector('.center-panel');
-        const historySection = document.getElementById('history-section');
-        const resultSection = document.getElementById('result-section');
-        
-        if (showResult) {
-          // 결과 섹션을 보여주고 히스토리를 우측 패널에 유지
-          resultSection.style.display = 'block';
-        } else {
-          resultSection.style.display = 'none';
-        }
-      }
-      
-      document.getElementById('analyze-btn').addEventListener('click', function() {
-        moveHistorySection(true);
-      });
-      
-      window.addEventListener('DOMContentLoaded', function() {
-        if (document.getElementById('result-section').style.display === 'none') {
-          moveHistorySection(false);
-        }
-      });
-
-      // Modal functionality
-      document.addEventListener('click', function(e) {
-        if (e.target && e.target.classList.contains('detail-btn')) {
-          document.getElementById('detail-modal-overlay').classList.add('active');
-        }
-      });
-
-      document.querySelector('.modal-close-btn').addEventListener('click', function() {
-        document.getElementById('detail-modal-overlay').classList.remove('active');
-      });
-
-      document.getElementById('detail-modal-overlay').addEventListener('click', function(e) {
-        if (e.target === this) {
-          this.classList.remove('active');
-        }
-      });
-    </script>
+    
   </body>
 </html>

@@ -36,7 +36,7 @@ export function analyzeTopics(comments) {
   const sortedWords = Array.from(wordCounts.entries()).sort((a, b) => b[1] - a[1]);
 
   // Return the top 10 keywords
-  return sortedWords.slice(0, 10).map(entry => entry[0]);
+  return sortedWords.slice(0, 10);
 }
 
 // Basic sentiment dictionaries

@@ -347,6 +347,12 @@ const updateTrendingCategoryList = async () => {
  * @param {object} data - 상세 분석 데이터
  */
 const showDetailModal = (data) => {
+  if (!data || !data.videoInfo) {
+    console.error('상세 분석 데이터가 올바르지 않습니다.', data);
+    alert('상세 정보를 표시할 수 없습니다.');
+    return;
+  }
+
   detailVideoInfo.innerHTML = `
     <img src="${data.videoInfo.thumbnail_url}" alt="영상 썸네일" style="width:100%; max-width: 480px; border-radius: 8px;" />
     <h3>${data.videoInfo.title}</h3>
@@ -356,25 +362,34 @@ const showDetailModal = (data) => {
     <p><strong>좋아요:</strong> ${data.videoInfo.likes.toLocaleString()}</p>
   `;
 
-  detailCommentSummary.innerHTML = `<p><strong>영상 핵심 내용 (댓글 기반)</strong></p><p>${data.commentSummaryText}</p>`;
+  // 댓글 요약은 현재 제공되지 않으므로 비워둡니다.
+  detailCommentSummary.innerHTML = '';
 
-  let topicsHtml = '<h5>주요 토픽 TOP 10</h5><ol>';
-  data.topTopics.forEach(topic => {
-    topicsHtml += `<li>${topic[0]} (${topic[1]}회)</li>`;
-  });
-  topicsHtml += '</ol>';
+  let topicsHtml = '<h5>주요 토픽 TOP 10</h5>';
+  if (data.topics && data.topics.length > 0) {
+    topicsHtml += '<ol>';
+    data.topics.forEach(topic => {
+      topicsHtml += `<li>${topic[0]} (${topic[1]}회)</li>`;
+    });
+    topicsHtml += '</ol>';
+  } else {
+    topicsHtml += '<p>분석된 토픽이 없습니다.</p>';
+  }
 
-  detailCommentAnalysisResult.innerHTML = `
-    <h5>댓글 감정 분석 (총 ${data.commentsCount}개)</h5>
-    <ul>
-      <li>😊 기쁨: ${data.emotionAnalysis.joy}개</li>
-      <li>😥 슬픔: ${data.emotionAnalysis.sadness}개</li>
-      <li>😡 분노: ${data.emotionAnalysis.anger}개</li>
-      <li>😲 놀람: ${data.emotionAnalysis.surprise}개</li>
-      <li>😐 중립: ${data.emotionAnalysis.neutral}개</li>
-    </ul>
-    ${topicsHtml}
-  `;
+  let sentimentHtml = `<h5>댓글 감정 분석 (총 ${data.commentsCount}개)</h5>`;
+  if (data.sentiment) {
+    sentimentHtml += `
+      <ul>
+        <li>긍정: ${(data.sentiment.positive * 100).toFixed(1)}%</li>
+        <li>부정: ${(data.sentiment.negative * 100).toFixed(1)}%</li>
+        <li>중립: ${(data.sentiment.neutral * 100).toFixed(1)}%</li>
+      </ul>
+    `;
+  } else {
+    sentimentHtml += '<p>감정 분석 결과가 없습니다.</p>';
+  }
+
+  detailCommentAnalysisResult.innerHTML = sentimentHtml + topicsHtml;
 
   detailModalOverlay.classList.add('active');
 };
