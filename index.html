@@ -11,7 +11,7 @@
       <h1>Youtube Video Analyzer</h1>
 
       <section id="analysis-section">
-        <input type="text" id="youtube-url" placeholder="분석할 유튜브 URL을 입력하세요." />
+        <textarea id="youtube-urls" placeholder="분석할 유튜브 URL을 한 줄에 하나씩 입력하세요." rows="5"></textarea>
         <button id="analyze-btn">분석하기</button>
       </section>
 
@@ -31,10 +31,32 @@
 
       <section id="result-section" class="card" style="display: none;">
         <h2>분석 결과</h2>
-        <div id="result-content"></div>
-        <div id="comment-analysis-content" style="margin-top: 2rem;">
-          <h4>댓글 분석 결과</h4>
-          <div id="comment-analysis-result"></div>
+        <div class="table-container">
+          <table id="multi-result-table">
+            <thead>
+              <tr>
+                <th>영상 제목</th>
+                <th>카테고리</th>
+                <th>좋아요</th>
+                <th>주요 감정</th>
+                <th>상세 보기</th> <!-- New column for details -->
+              </tr>
+            </thead>
+            <tbody>
+              <!-- 분석 결과가 여기에 추가됩니다. -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Detailed Analysis Modal/Section -->
+        <div id="detail-modal-overlay" class="modal-overlay">
+          <div id="detail-modal-content" class="modal-content card">
+            <button class="modal-close-btn">&times;</button>
+            <h3>상세 분석 결과</h3>
+            <div id="detail-video-info"></div>
+            <div id="detail-comment-summary" style="margin-bottom: 1.5rem; padding: 1rem; background-color: rgba(0,0,0,0.1); border-radius: 8px;"></div>
+            <div id="detail-comment-analysis-result"></div>
+          </div>
         </div>
       </section>
 

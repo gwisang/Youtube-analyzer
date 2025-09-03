@@ -8,11 +8,10 @@ import { categorizeVideo } from './js/videoHelper.js';
 const YOUTUBE_API_KEY = 'AIzaSyBZH0RDzhcD__2Ab2TbRfMm9VtNVzVaACE';
 
 // 1. DOM 요소 가져오기
-const urlInput = document.getElementById('youtube-url');
+const urlsInput = document.getElementById('youtube-urls');
 const analyzeBtn = document.getElementById('analyze-btn');
 const resultSection = document.getElementById('result-section');
-const resultContent = document.getElementById('result-content');
-const commentAnalysisResult = document.getElementById('comment-analysis-result');
+const multiResultTableBody = document.querySelector('#multi-result-table tbody');
 const historyList = document.getElementById('history-list');
 
 // 탭 관련 DOM 요소
@@ -22,6 +21,16 @@ const trendingVideoContent = document.getElementById('trending-video-content');
 const trendingCategoryContent = document.getElementById('trending-category-content');
 const trendingVideoList = document.getElementById('trending-video-list');
 const trendingCategoryList = document.getElementById('trending-category-list');
+
+// 상세 분석 모달 관련 DOM 요소
+const detailModalOverlay = document.getElementById('detail-modal-overlay');
+const detailModalCloseBtn = document.querySelector('.modal-close-btn');
+const detailVideoInfo = document.getElementById('detail-video-info');
+const detailCommentSummary = document.getElementById('detail-comment-summary');
+const detailCommentAnalysisResult = document.getElementById('detail-comment-analysis-result');
+
+// 분석 결과를 저장할 배열 (상세 보기를 위해)
+const analysisResults = [];
 
 /**
  * 유튜브 URL에서 동영상 ID를 추출하는 함수
@@ -61,8 +70,7 @@ const fetchYouTubeVideoData = async (videoId) => {
     return null;
   } catch (error) {
     console.error('YouTube API 호출 실패:', error);
-    alert('YouTube API에서 데이터를 가져오는 데 실패했습니다.');
-    return null;
+    return null; // alert 대신 null 반환
   }
 };
 
@@ -90,8 +98,7 @@ const fetchYouTubeComments = async (videoId) => {
     return allComments;
   } catch (error) {
     console.error('YouTube 댓글 로딩 실패:', error);
-    alert('YouTube에서 댓글을 가져오는 데 실패했습니다.');
-    return [];
+    return []; // alert 대신 빈 배열 반환
   }
 };
 
@@ -106,7 +113,6 @@ const saveVideoData = async (videoData) => {
     return data[0];
   } catch (error) {
     console.error('데이터 저장 실패:', error);
-    alert(`데이터 저장 중 오류가 발생했습니다: ${error.message}`);
   }
 };
 
@@ -124,7 +130,6 @@ const fetchVideoHistory = async () => {
     return data;
   } catch (error) {
     console.error('기록 조회 실패:', error);
-    alert(`기록 조회 중 오류가 발생했습니다: ${error.message}`);
   }
 };
 
@@ -138,7 +143,6 @@ const fetchTrendingVideos = async () => {
     return data;
   } catch (error) {
     console.error('인기 동영상 조회 실패:', error);
-    alert(`인기 동영상 조회 중 오류가 발생했습니다: ${error.message}`);
   }
 };
 
@@ -152,7 +156,6 @@ const fetchTrendingCategories = async () => {
     return data;
   } catch (error) {
     console.error('인기 카테고리 조회 실패:', error);
-    alert(`인기 카테고리 조회 중 오류가 발생했습니다: ${error.message}`);
   }
 };
 
@@ -167,84 +170,116 @@ const deleteVideoHistory = async (id) => {
     console.log(`${id}번 기록 삭제 성공`);
   } catch (error) {
     console.error('기록 삭제 실패:', error);
-    alert(`기록 삭제 중 오류가 발생했습니다: ${error.message}`);
   }
 };
 
 /**
- * 분석 버튼 클릭 이벤트 핸들러
+ * 단일 영상 분석 로직
+ * @param {string} url - 분석할 유튜브 URL
+ * @returns {object|null} - 분석 결과 객체 또는 실패 시 null
+ */
+const analyzeSingleVideo = async (url) => {
+  const videoId = getVideoIdFromUrl(url);
+  if (!videoId) {
+    return { title: `<span class="error-text">유효하지 않은 URL: ${url}</span>`, category: '-', likes: '-', dominantEmotion: '-', fullData: null };
+  }
+
+  const videoData = await fetchYouTubeVideoData(videoId);
+  if (!videoData) {
+    return { title: `<span class="error-text">영상 정보 로딩 실패: ${url}</span>`, category: '-', likes: '-', dominantEmotion: '-', fullData: null };
+  }
+
+  const category = categorizeVideo(videoData.title);
+  const dataToSave = { ...videoData, url, category };
+  await saveVideoData(dataToSave);
+
+  const comments = await fetchYouTubeComments(videoId);
+  let dominantEmotion = '-';
+  let emotionAnalysis = {};
+  let topTopics = [];
+  let commentSummaryText = '';
+
+  if (comments.length > 0) {
+    emotionAnalysis = analyzeEmotions(comments);
+    topTopics = extractTopics(comments);
+
+    const emotionMap = { joy: '기쁨', sadness: '슬픔', anger: '분노', surprise: '놀람', neutral: '중립' };
+    const dominant = Object.keys(emotionAnalysis).reduce((a, b) => emotionAnalysis[a] > emotionAnalysis[b] ? a : b);
+    dominantEmotion = emotionMap[dominant] || '-';
+
+    if (topTopics.length > 0) {
+      const summaryTopics = topTopics.slice(0, 3).map(topic => `<strong>${topic[0]}</strong>`).join(', ');
+      commentSummaryText = `이 영상은 주로 ${summaryTopics}에 대해 이야기하고 있으며, 시청자들은 <strong>${emotionMap[dominant]}</strong> 감정을 가장 많이 표현했습니다.`;
+    } else {
+      commentSummaryText = `댓글에서 뚜렷한 주제를 찾기 어렵지만, 시청자들은 <strong>${emotionMap[dominant]}</strong> 감정을 가장 많이 표현했습니다.`;
+    }
+  } else {
+    commentSummaryText = '<p>분석할 댓글이 없거나 댓글을 불러올 수 없습니다.</p>';
+  }
+
+  return {
+    title: videoData.title,
+    category,
+    likes: videoData.likes.toLocaleString(),
+    dominantEmotion,
+    fullData: { // 상세 보기를 위한 전체 데이터
+      videoInfo: videoData,
+      commentsCount: comments.length,
+      emotionAnalysis,
+      topTopics,
+      commentSummaryText,
+    }
+  };
+};
+
+/**
+ * 여러 영상 분석을 위한 메인 핸들러
  */
 const handleAnalysis = async () => {
-  const url = urlInput.value;
-  if (!url) {
+  const urlsText = urlsInput.value;
+  if (!urlsText.trim()) {
     alert('유튜브 URL을 입력해주세요.');
     return;
   }
 
-  const videoId = getVideoIdFromUrl(url);
-  if (!videoId) {
-    alert('유효하지 않은 유튜브 URL입니다.');
+  const urls = urlsText.trim().split(/\s+/).filter(url => url);
+  if (urls.length === 0) {
+    alert('입력된 URL이 없습니다.');
     return;
   }
 
-  console.log(`분석 시작: ${url} (Video ID: ${videoId})`);
   resultSection.style.display = 'block';
-  resultContent.innerHTML = `<p><strong>URL:</strong> ${url}</p><p>영상 정보를 불러오는 중...</p>`;
-  commentAnalysisResult.innerHTML = '<p>모든 댓글을 불러와 분석하는 중입니다. 댓글 수에 따라 시간이 걸릴 수 있습니다...</p>';
+  multiResultTableBody.innerHTML = ''; // 테이블 초기화
+  analysisResults.length = 0; // 이전 분석 결과 초기화
 
-  const videoData = await fetchYouTubeVideoData(videoId);
+  analyzeBtn.disabled = true;
+  analyzeBtn.textContent = '분석 중...';
 
-  if (videoData) {
-    const category = categorizeVideo(videoData.title);
-    const dataToSave = { ...videoData, url, category };
-    const savedData = await saveVideoData(dataToSave);
+  for (let i = 0; i < urls.length; i++) {
+    const url = urls[i];
+    const result = await analyzeSingleVideo(url);
+    analysisResults.push(result.fullData); // 상세 보기를 위해 전체 데이터 저장
 
-    resultContent.innerHTML = `
-      <img src="${videoData.thumbnail_url}" alt="영상 썸네일" style="width:100%; max-width: 480px; border-radius: 8px;" />
-      <h3>${videoData.title}</h3>
-      <p><strong>URL:</strong> ${url}</p>
-      <p><strong>카테고리:</strong> ${category}</p>
-      <p><strong>조회수:</strong> ${videoData.views.toLocaleString()}</p>
-      <p><strong>좋아요:</strong> ${videoData.likes.toLocaleString()}</p>
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${result.title}</td>
+      <td>${result.category}</td>
+      <td>${result.likes}</td>
+      <td>${result.dominantEmotion}</td>
+      <td><button class="detail-btn" data-index="${i}">상세 보기</button></td>
     `;
-
-    const comments = await fetchYouTubeComments(videoId);
-    if (comments.length > 0) {
-      const emotionAnalysis = analyzeEmotions(comments);
-      const topTopics = extractTopics(comments);
-
-      let topicsHtml = '<h5>주요 토픽 TOP 10</h5><ol>';
-      topTopics.forEach(topic => {
-        topicsHtml += `<li>${topic[0]} (${topic[1]}회)</li>`;
-      });
-      topicsHtml += '</ol>';
-
-      commentAnalysisResult.innerHTML = `
-        <h5>댓글 감정 분석 (총 ${comments.length}개)</h5>
-        <ul>
-          <li>😊 기쁨: ${emotionAnalysis.joy}개</li>
-          <li>😥 슬픔: ${emotionAnalysis.sadness}개</li>
-          <li>😡 분노: ${emotionAnalysis.anger}개</li>
-          <li>😲 놀람: ${emotionAnalysis.surprise}개</li>
-          <li>😐 중립: ${emotionAnalysis.neutral}개</li>
-        </ul>
-        ${topicsHtml}
-      `;
-    } else {
-      commentAnalysisResult.innerHTML = '<p>분석할 댓글이 없거나 댓글을 불러올 수 없습니다.</p>';
-    }
-    
-    if (savedData) {
-      await updateHistory();
-      await updateTrendingVideoList();
-      await updateTrendingCategoryList();
-    }
-
-  } else {
-    resultContent.innerHTML = '<p>영상 정보를 가져오는 데 실패했습니다. URL을 확인해주세요.</p>';
-    commentAnalysisResult.innerHTML = '';
+    multiResultTableBody.appendChild(row);
   }
+
+  analyzeBtn.disabled = false;
+  analyzeBtn.textContent = '분석하기';
+
+  // 모든 분석 완료 후 기록 및 트렌드 업데이트
+  await updateHistory();
+  await updateTrendingVideoList();
+  await updateTrendingCategoryList();
 };
+
 
 /**
  * 분석 기록을 화면에 표시하는 함수
@@ -311,8 +346,51 @@ const updateTrendingCategoryList = async () => {
 };
 
 /**
+ * 상세 분석 모달을 표시하는 함수
+ * @param {object} data - 상세 분석 데이터
+ */
+const showDetailModal = (data) => {
+  detailVideoInfo.innerHTML = `
+    <img src="${data.videoInfo.thumbnail_url}" alt="영상 썸네일" style="width:100%; max-width: 480px; border-radius: 8px;" />
+    <h3>${data.videoInfo.title}</h3>
+    <p><strong>URL:</strong> <a href="${data.videoInfo.url}" target="_blank">${data.videoInfo.url}</a></p>
+    <p><strong>카테고리:</strong> ${data.videoInfo.category}</p>
+    <p><strong>조회수:</strong> ${data.videoInfo.views.toLocaleString()}</p>
+    <p><strong>좋아요:</strong> ${data.videoInfo.likes.toLocaleString()}</p>
+  `;
+
+  detailCommentSummary.innerHTML = `<p><strong>영상 핵심 내용 (댓글 기반)</strong></p><p>${data.commentSummaryText}</p>`;
+
+  let topicsHtml = '<h5>주요 토픽 TOP 10</h5><ol>';
+  data.topTopics.forEach(topic => {
+    topicsHtml += `<li>${topic[0]} (${topic[1]}회)</li>`;
+  });
+  topicsHtml += '</ol>';
+
+  detailCommentAnalysisResult.innerHTML = `
+    <h5>댓글 감정 분석 (총 ${data.commentsCount}개)</h5>
+    <ul>
+      <li>😊 기쁨: ${data.emotionAnalysis.joy}개</li>
+      <li>😥 슬픔: ${data.emotionAnalysis.sadness}개</li>
+      <li>😡 분노: ${data.emotionAnalysis.anger}개</li>
+      <li>😲 놀람: ${data.emotionAnalysis.surprise}개</li>
+      <li>😐 중립: ${data.emotionAnalysis.neutral}개</li>
+    </ul>
+    ${topicsHtml}
+  `;
+
+  detailModalOverlay.classList.add('active');
+};
+
+/**
+ * 상세 분석 모달을 숨기는 함수
+ */
+const hideDetailModal = () => {
+  detailModalOverlay.classList.remove('active');
+};
+
+/**
  * 삭제 버튼 클릭 이벤트 핸들러 (이벤트 위임)
- * @param {Event} e 
  */
 const handleDeleteClick = async (e) => {
   if (e.target.classList.contains('delete-btn')) {
@@ -348,11 +426,30 @@ const handleTabClick = (e) => {
   }
 };
 
+/**
+ * 상세 보기 버튼 클릭 이벤트 핸들러 (이벤트 위임)
+ */
+const handleDetailClick = (e) => {
+  if (e.target.classList.contains('detail-btn')) {
+    const index = parseInt(e.target.dataset.index);
+    const data = analysisResults[index];
+    if (data) {
+      showDetailModal(data);
+    }
+  }
+};
 
 // 2. 이벤트 리스너 등록
 analyzeBtn.addEventListener('click', handleAnalysis);
 historyList.addEventListener('click', handleDeleteClick);
 document.querySelector('.tabs').addEventListener('click', handleTabClick);
+multiResultTableBody.addEventListener('click', handleDetailClick); // 상세 보기 버튼 클릭 이벤트
+detailModalCloseBtn.addEventListener('click', hideDetailModal); // 모달 닫기 버튼
+detailModalOverlay.addEventListener('click', (e) => { // 모달 오버레이 클릭 시 닫기
+  if (e.target === detailModalOverlay) {
+    hideDetailModal();
+  }
+});
 
 // 3. 앱 초기화
 const init = () => {
